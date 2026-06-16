@@ -1,0 +1,25 @@
+{
+  "filters": {
+    "comments": true
+  },
+  "rules": {
+    "preset-ja-technical-writing": {
+      "sentence-length": {
+        "max": 120,
+        "skipUrlStringLink": true
+      },
+      "no-mix-dearu-desumasu": {
+        "preferInHeader": "",
+        "preferInBody": "",
+        "preferInList": "",
+        "strict": false
+      },
+      "no-doubled-joshi": {
+        "min_interval": 1,
+        "severity": "warning"
+      },
+      "ja-no-weak-phrase": false,
+      "no-exclamation-question-mark": false
+    }
+  }
+}

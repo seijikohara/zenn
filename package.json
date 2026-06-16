@@ -1,0 +1,32 @@
+{
+  "name": "zenn",
+  "version": "1.0.0",
+  "description": "zenn.dev/seijikohara で公開する Zenn コンテンツのリポジトリ",
+  "scripts": {
+    "lint": "textlint \"**/*.md\"",
+    "lint:fix": "textlint --fix \"**/*.md\"",
+    "prepare": "lefthook install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seijikohara/zenn.git"
+  },
+  "keywords": [],
+  "author": "Seiji Kohara",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/seijikohara/zenn/issues"
+  },
+  "homepage": "https://github.com/seijikohara/zenn#readme",
+  "dependencies": {
+    "zenn-cli": "^0.5.1"
+  },
+  "devDependencies": {
+    "lefthook": "^2.1.9",
+    "textlint": "^15.7.1",
+    "textlint-filter-rule-comments": "^1.3.0",
+    "textlint-rule-preset-ja-technical-writing": "^12.0.2"
+  },
+  "private": true
+}

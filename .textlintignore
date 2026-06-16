@@ -1,0 +1,4 @@
+node_modules/
+
+# 記法リファレンスはコード例中心の早見表のため、散文向けルールの対象外
+.claude/skills/zenn-syntax/reference.md
