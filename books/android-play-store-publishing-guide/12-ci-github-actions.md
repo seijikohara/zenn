@@ -106,7 +106,9 @@ jobs:
           cache: gradle
 
       - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "${{ github.workspace }}/upload-keystore.jks"
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "${{ github.workspace }}/upload-keystore.jks"
 
       - name: Build signed AAB
         env:
