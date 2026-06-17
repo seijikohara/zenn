@@ -40,9 +40,9 @@ tools: Read, Grep, Glob, Bash
 
 - 対象が Zenn に認識されることを確認する。記事は `npx zenn list:articles`、本は `npx zenn list:books` を実行し、対象が一覧に出ることを確認する。出ない場合は frontmatter または `config.yaml` の不備を疑う。
 - プレビューサーバが起動できることを、ブロックしない方法で確認する。`npx zenn preview` はサーバを起動したままにするため、バックグラウンドで起動し、応答を確認したらプロセスを停止する。サーバを起動したままにしない。手順の例を次に示す。
-  - `npx zenn preview > /tmp/zenn-preview.log 2>&1 &` でバックグラウンド起動する。
+  - `npx zenn preview > /tmp/zenn-preview.log 2>&1 &` でバックグラウンド起動し、直後に `PREVIEW_PID=$!` で PID を控える。
   - 数秒待ち、`curl -sI http://localhost:8000` が応答を返すことと、ログに起動失敗が無いことを確認する。
-  - 起動したプロセスを `kill` する。
+  - 控えた PID を `kill "$PREVIEW_PID"` で停止する。
 - プレビューで目視確認すべき点を、チェックリストとして指摘に含める（自動では確認できないため、人が `npx zenn preview` で確認する前提）。
   - メッセージ / 警告ボックス（`:::message` / `:::message alert`）と `:::details` が想定どおり描画されるか。
   - Mermaid 図・KaTeX 数式・脚注のリンクが描画されるか。
