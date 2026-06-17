@@ -18,7 +18,14 @@ mise は、他言語の core backend と異なり、Rust を rustup を介して
 
 ### バージョンの指定方法
 
-`rust` のバージョン指定には、第 4 章で説明した構文を使います。完全指定・部分指定に加えて、`latest` のエイリアスと、Rust のリリースチャンネルを利用できます[^rust]。
+`rust` のバージョン指定には、第 4 章で説明した構文を使います。完全指定・部分指定に加えて、`latest` のエイリアスと、Rust のリリースチャンネルを利用できます[^rust]。指定方法と解決結果を次に示します。
+
+| 指定方法 | 記述例 | 解決結果 |
+| --- | --- | --- |
+| 完全指定 | `rust = "1.96.0"` | 1.96.0 に固定 |
+| 部分指定 | `rust = "1.96"` | 1.96 系の最新バージョン（執筆時点では 1.96.0） |
+| `latest` | `rust = "latest"` | 最新の安定版（stable チャンネル） |
+| チャンネル指定 | `rust = "beta"` | 最新のベータ版 |
 
 ```toml:mise.toml
 [tools]
@@ -106,7 +113,9 @@ mise は、`rust` を初めて宣言したときに rustup が無ければ、rus
 
 Rust のツールチェーンの実体は、`~/.local/share/mise/installs` には置かれません[^rust]。他言語の core backend は、取得したツールを mise のインストールディレクトリに展開します。Rust は rustup が管理するため、実体は rustup のディレクトリに置かれます。mise は既定で、rustup のホームディレクトリを `~/.rustup`、cargo のホームディレクトリを `~/.cargo` として扱います[^rust]。どちらも環境変数 `RUSTUP_HOME`・`CARGO_HOME` を尊重し、設定があればその値を使います[^rust]。
 
+:::details mise の rustup・cargo を既存環境から分離する設定
 mise の rustup と cargo を、既存の rustup・cargo から分離する設定もあります。`MISE_RUSTUP_HOME`・`MISE_CARGO_HOME` を設定すると、mise は分離したディレクトリを使います[^rust]。既存の rustup でツールチェーンを導入済みの環境で、mise の管理を切り離したい場合に利用します。
+:::
 
 ```shell
 $ rustc --version
@@ -119,14 +128,27 @@ $ rustup show active-toolchain
 
 ### ツールチェーンのオプション
 
-mise は、ツールチェーンの導入時にオプションを指定できます[^rust]。オプションは `[tools]` でテーブル形式の宣言に書きます。`profile` で導入するコンポーネントの範囲を、`components` で追加コンポーネントを、`targets` でクロスコンパイル用のターゲットを指定します[^rust]。
+mise は、ツールチェーンの導入時にオプションを指定できます[^rust]。オプションは `[tools]` でテーブル形式の宣言に書きます。指定できるオプションを次に示します[^rust]。
+
+| オプション | 指定する内容 |
+| --- | --- |
+| `profile` | 導入するコンポーネントの範囲 |
+| `components` | 追加コンポーネント |
+| `targets` | クロスコンパイル用のターゲット |
 
 ```toml:mise.toml
 [tools]
 rust = { version = "1.96.0", profile = "minimal", components = "rust-src,clippy" }
 ```
 
-`profile` は、`minimal`・`default`・`complete` のいずれかを取ります[^rust]。`minimal` は `rustc`・`rust-std`・`cargo` だけを導入します。`default` は `minimal` に `rust-docs`・`rustfmt`・`clippy` を加えます。`profile` を省略すると、rustup の既定プロファイルに従います[^rust]。`components` は、プロファイルに含まれないコンポーネントをカンマ区切りで追加します。前掲の例は、`minimal` プロファイルに `rust-src` と `clippy` を追加します。
+`profile` は、`minimal`・`default`・`complete` のいずれかを取ります[^rust]。`minimal` と `default` が導入するコンポーネントを次に示します。
+
+| プロファイル | 導入するコンポーネント |
+| --- | --- |
+| `minimal` | `rustc`・`rust-std`・`cargo` |
+| `default` | `minimal` に `rust-docs`・`rustfmt`・`clippy` を加える |
+
+`profile` を省略すると、rustup の既定プロファイルに従います[^rust]。`components` は、プロファイルに含まれないコンポーネントをカンマ区切りで追加します。前掲の例は、`minimal` プロファイルに `rust-src` と `clippy` を追加します。
 
 ### mise と rustup の選択指針
 
@@ -169,14 +191,27 @@ ripgrep 15.1.0
 
 ### cargo backend のオプション
 
-cargo backend では、`cargo install` に渡すオプションを指定できます[^cargo-backend]。オプションは `[tools]` でテーブル形式の宣言に書きます。`features` でクレートの機能（feature）を、`default-features` で既定機能の有効・無効を指定します[^cargo-backend]。次の例は、`cargo-edit` を `add` feature つきで導入します。
+cargo backend では、`cargo install` に渡すオプションを指定できます[^cargo-backend]。オプションは `[tools]` でテーブル形式の宣言に書きます。指定できるオプションを次に示します[^cargo-backend]。
+
+| オプション | 指定する内容 |
+| --- | --- |
+| `features` | クレートの機能（feature） |
+| `default-features` | 既定機能の有効・無効 |
+
+次の例は、`cargo-edit` を `add` feature つきで導入します。
 
 ```toml:mise.toml
 [tools]
 "cargo:cargo-edit" = { version = "latest", features = "add" }
 ```
 
-Git リポジトリからの導入も指定できます[^cargo-backend]。`mise.toml` では、`cargo:` の後にクレート名の代わりに Git リポジトリの URL をキーに書きます。`version` の値に `tag:`・`branch:`・`rev:` の接頭辞を付けて対象を指定します。それぞれタグ・ブランチ・コミットを指します。
+Git リポジトリからの導入も指定できます[^cargo-backend]。`mise.toml` では、`cargo:` の後にクレート名の代わりに Git リポジトリの URL をキーに書きます。`version` の値に接頭辞を付けて対象を指定します。接頭辞と対象の対応を次に示します。
+
+| 接頭辞 | 対象 |
+| --- | --- |
+| `tag:` | タグ |
+| `branch:` | ブランチ |
+| `rev:` | コミット |
 
 ```toml:mise.toml
 [tools]
