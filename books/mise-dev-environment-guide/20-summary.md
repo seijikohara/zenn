@@ -4,35 +4,29 @@ title: "まとめ"
 
 本章は、本書全 20 章で扱った内容を総括し、mise[^mise] の推奨構成を 1 つの `mise.toml` にまとめ、次の一歩を示します。読了後には、複数言語のランタイム・CLI ツール・環境変数・タスクを 1 つの設定ファイルで宣言し、チームと CI で再現できる状態に到達します。
 
+:::message
 本章のバージョン番号は、執筆時点（2026 年 6 月、mise 2026.6.10[^mise-version]）の値です。OS は macOS（既定のシェルは zsh）を前提とします。
+:::
 
 ## mise 運用のベストプラクティス
 
 本書を通じて示した運用方針を 5 点にまとめます。各項目は、該当する章で詳しく扱いました。
 
-設定を 1 つの `mise.toml` に集約します。ツールのバージョン・環境変数・タスクを 1 ファイルで宣言し、プロジェクトの設定を一元管理します（第 4 章）。言語別のバージョン管理ツールを併用せず、mise に統合します。
-
-再現性が必要なプロジェクトでは、バージョンを固定します。`[tools]` で完全指定するか、ロックファイル `mise.lock` で解決済みのバージョンとチェックサムを固定します（第 5・15 章）。緩いバージョン指定を保ちながら全員のバージョンをそろえる場合は、`[tools]` を部分指定にして `mise.lock` を併用します。
-
-チームで設定とロックファイルを共有します。`mise.toml` と `mise.lock` をバージョン管理システムにコミットし、新メンバーは `mise install` を一度実行して環境をそろえます（第 15 章）。
-
-CI で同じ設定を再利用します。`jdx/mise-action` などで `mise.toml` のツールを導入し、ローカルと CI のバージョンをそろえます（第 16 章）。
-
-環境変数とタスクを `mise.toml` で管理します。`[env]` でプロジェクト固有の環境変数と PATH を宣言し（第 13 章）、`[tasks]` で lint・test などの定型作業を定義します（第 14 章）。
+1. **設定を 1 つの `mise.toml` に集約します**（第 4 章）。ツールのバージョン・環境変数・タスクを 1 ファイルで宣言し、プロジェクトの設定を一元管理します。言語別のバージョン管理ツールを併用せず、mise に統合します。
+2. **再現性が必要なプロジェクトでは、バージョンを固定します**（第 5・15 章）。`[tools]` で完全指定するか、ロックファイル `mise.lock` で解決済みのバージョンとチェックサムを固定します。緩いバージョン指定を保ちながら全員のバージョンをそろえる場合は、`[tools]` を部分指定にして `mise.lock` を併用します。
+3. **チームで設定とロックファイルを共有します**（第 15 章）。`mise.toml` と `mise.lock` をバージョン管理システムにコミットし、新メンバーは `mise install` を一度実行して環境をそろえます。
+4. **CI で同じ設定を再利用します**（第 16 章）。`jdx/mise-action` などで `mise.toml` のツールを導入し、ローカルと CI のバージョンをそろえます。
+5. **環境変数とタスクを `mise.toml` で管理します**。`[env]` でプロジェクト固有の環境変数と PATH を宣言し（第 13 章）、`[tasks]` で lint・test などの定型作業を定義します（第 14 章）。
 
 ## つまずきやすい点
 
 本書で扱った落とし穴を再確認します。各項目は、該当する章で対処方法を示しました。
 
-idiomatic version files は、mise 2025.10.0 以降、既定で無効です（第 6 章）。`.nvmrc` や `.python-version` を読み込むには、`idiomatic_version_file_enable_tools` 設定にツール名を追加します。設定をしないと、`.nvmrc` などのバージョンファイルは反映されません。
-
-PATH activation の有効化が漏れると、mise の管理外のバージョンが使われます（第 3・19 章）。シェルの設定に `mise activate` を追記し、シェルへ反映します。`mise doctor` の `activated` 行で有効化を確認します。
-
-PATH activation と shims を同時に有効にすると、PATH 解決の経路が二重になります（第 5・19 章）。対話的なシェルでは PATH activation を選び、対話的でない実行を主とする場合は shims を選び、どちらか一方を有効にします。
-
-Go は、`go.mod` の `go` ディレクティブが指すバージョンによっては、`GOTOOLCHAIN` の働きで mise が固定したバージョンと異なるツールチェーンを自動で取得します（第 8 章）。mise が固定したバージョンを使うには、`GOTOOLCHAIN=local` を設定します。
-
-`[env]` のテンプレートやスクリプトを含む `mise.toml` は、信頼するまで読み込まれません（第 15 章）。`mise trust` で設定ファイルを信頼します。プレーンな `[tools]` だけの設定は、信頼を要しません。
+- **idiomatic version files の既定無効**（第 6 章）。idiomatic version files は、mise 2025.10.0 以降、既定で無効です。`.nvmrc` や `.python-version` を読み込むには、`idiomatic_version_file_enable_tools` 設定にツール名を追加します。設定をしないと、`.nvmrc` などのバージョンファイルは反映されません。
+- **PATH activation の有効化漏れ**（第 3・19 章）。PATH activation の有効化が漏れると、mise の管理外のバージョンが使われます。シェルの設定に `mise activate` を追記し、シェルへ反映します。`mise doctor` の `activated` 行で有効化を確認します。
+- **PATH activation と shims の競合**（第 5・19 章）。PATH activation と shims を同時に有効にすると、PATH 解決の経路が二重になります。対話的なシェルでは PATH activation を選び、対話的でない実行を主とする場合は shims を選び、どちらか一方を有効にします。
+- **Go の `GOTOOLCHAIN` による自動取得**（第 8 章）。Go は、`go.mod` の `go` ディレクティブが指すバージョンによっては、`GOTOOLCHAIN` の働きで mise が固定したバージョンと異なるツールチェーンを自動で取得します。mise が固定したバージョンを使うには、`GOTOOLCHAIN=local` を設定します。
+- **`mise trust` による信頼**（第 15 章）。`[env]` のテンプレートやスクリプトを含む `mise.toml` は、信頼するまで読み込まれません。`mise trust` で設定ファイルを信頼します。プレーンな `[tools]` だけの設定は、信頼を要しません。
 
 ## 推奨構成の mise.toml
 
@@ -63,7 +57,12 @@ depends = ["lint"]     # lint の後に実行する
 run = "vitest run"
 ```
 
-各セクションの役割を補足します。`[settings]` の `lockfile` は、ロックファイル `mise.lock` の読み書きを制御します[^lockfile]。`lockfile` は既定（未設定）で有効で、`mise.lock` があれば読み書きします。`lockfile = true` は既定の挙動を明示する指定で、`lockfile = false` で無効にできます[^lockfile]。`[tools]` は、Node.js・Python・jq を部分指定で宣言します。部分指定でも、`mise.lock` を併用すると、解決されるバージョンを全員でそろえられます[^tools]。`[env]` は、環境変数 `NODE_ENV`・`APP_CONFIG_DIR` を定義し、`_.path` でプロジェクトの `bin` を PATH へ追加し、`_.file` で `.env` を読み込みます[^env]。`[tasks]` は、`lint` と `test` を定義し、`test` の `depends` で `lint` を先に実行します[^tasks]。
+各セクションの役割を補足します。
+
+- `[settings]` の `lockfile` は、ロックファイル `mise.lock` の読み書きを制御します[^lockfile]。`lockfile` は既定（未設定）で有効で、`mise.lock` があれば読み書きします。`lockfile = true` は既定の挙動を明示する指定で、`lockfile = false` で無効にできます[^lockfile]。
+- `[tools]` は、Node.js・Python・jq を部分指定で宣言します。部分指定でも、`mise.lock` を併用すると、解決されるバージョンを全員でそろえられます[^tools]。
+- `[env]` は、環境変数 `NODE_ENV`・`APP_CONFIG_DIR` を定義し、`_.path` でプロジェクトの `bin` を PATH へ追加し、`_.file` で `.env` を読み込みます[^env]。
+- `[tasks]` は、`lint` と `test` を定義し、`test` の `depends` で `lint` を先に実行します[^tasks]。
 
 ロックファイル `mise.lock` は、自動では生成されません[^mise-lock]。空の `mise.lock` を用意してから `mise install` を実行するか、`mise lock` を実行すると生成します[^lockfile]。
 
