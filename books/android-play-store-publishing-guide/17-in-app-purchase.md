@@ -2,9 +2,13 @@
 title: "アプリ内購入を実装する"
 ---
 
-本章では、Google Play Billing[^billing] を使って、単発のアプリ内購入（デジタル商品の都度販売）を実装する最小の手順を扱います。販売には決済プロファイルが必要です。決済プロファイルは「有料アプリとして販売する」章を参照してください。
+本章では、Google Play Billing[^billing] を使って、単発のアプリ内購入（デジタル商品の都度販売）を実装する最小の手順を扱います。
 
 [^billing]: Play Billing の統合は [Play Billing ライブラリを統合する](https://developer.android.com/google/play/billing/integrate) を参照してください。
+
+:::message
+販売には決済プロファイルが必要です。決済プロファイルは「有料アプリとして販売する」章を参照してください。
+:::
 
 :::message
 本章のコードは要点を示す最小の骨格です。実際のアプリでは、エラー処理・状態管理・サーバー連携を加えます。完全な実装は公式ドキュメントを参照してください。
@@ -36,7 +40,11 @@ Play Console で、販売する単発商品を登録します。
 
 ## BillingClient を初期化する
 
-`BillingClient` を作成し、Google Play へ接続します。`BillingClient` は、画面のクラス（`MainActivity` など）か、課金を扱う専用のクラスに保持します。本章のコード片は、同じクラスのメンバーとして配置します。`context` には、アプリの `Context`（`Activity` または `Application`）を渡します。コードは、`com.android.billingclient.api` のクラスを `import` して使います。
+`BillingClient` を作成し、Google Play へ接続します。配置と引数は次のとおりです。
+
+- `BillingClient` は、画面のクラス（`MainActivity` など）か、課金を扱う専用のクラスに保持します。本章のコード片は、同じクラスのメンバーとして配置します。
+- `context` には、アプリの `Context`（`Activity` または `Application`）を渡します。
+- コードは、`com.android.billingclient.api` のクラスを `import` して使います。
 
 ```kotlin
 private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
@@ -114,9 +122,18 @@ billingClient.launchBillingFlow(activity, flowParams)
 
 ## 購入を確認する
 
-購入後は、3 日以内に購入を確認します。確認しないと、購入が自動で返金され、付与した権利が取り消されます[^ack]。消費型の商品は `consumeAsync` で消費し、再購入できるようにします。非消費型の商品は `acknowledgePurchase` で確認します。
+購入後は、3 日以内に購入を確認します。確認の方法は、商品の種別で次のように分かれます[^ack]。
+
+| 商品の種別 | 確認の方法 | 効果 |
+| ---------- | ---------- | ---- |
+| 消費型 | `consumeAsync` で消費する | 再購入できるようにする |
+| 非消費型 | `acknowledgePurchase` で確認する | 購入を確定する |
 
 [^ack]: 購入の確認と消費は [Play Billing ライブラリを統合する](https://developer.android.com/google/play/billing/integrate) を参照してください。
+
+:::message alert
+確認しないと、購入が自動で返金され、付与した権利が取り消されます。
+:::
 
 次のコードは、非消費型の商品を確認する例です。
 
@@ -149,9 +166,13 @@ billingClient.consumeAsync(consumeParams) { _, _ -> }
 
 ## テストする
 
-Play Console でライセンステスターを登録すると、実際の課金なしで購入をテストできます[^test]。ライセンステスターは、配信トラックのテスター（「テストとテスター運用」章）とは別に、課金検証用として登録します。テスト用の支払い方法（常に承認・常に拒否など）も使えます。
+Play Console でライセンステスターを登録すると、実際の課金なしで購入をテストできます[^test]。テスト用の支払い方法（常に承認・常に拒否など）も使えます。
 
 [^test]: テストは [Play Billing の統合をテストする](https://developer.android.com/google/play/billing/test) を参照してください。
+
+:::message
+ライセンステスターは、配信トラックのテスター（「テストとテスター運用」章）とは別に、課金検証用として登録します。
+:::
 
 ## 確認
 
