@@ -16,7 +16,11 @@ flowchart LR
   APK --> User[ユーザーの端末]
 ```
 
-アップロード鍵とアプリ署名鍵を分ける利点は、アップロード鍵を紛失・漏洩しても復旧できる点にあります。アップロード鍵は Play Console からリセットでき、アプリ署名鍵には影響しません。結果として、同じアプリの更新を継続して配信できます。
+アップロード鍵とアプリ署名鍵を分ける利点は、アップロード鍵を紛失・漏洩しても復旧できる点にあります。
+
+:::message
+アップロード鍵は Play Console からリセットでき、アプリ署名鍵には影響しません。結果として、同じアプリの更新を継続して配信できます。
+:::
 
 [^app-signing]: Play アプリ署名の詳細は [アプリに署名する](https://developer.android.com/studio/publish/app-signing) を参照してください。
 
@@ -32,9 +36,20 @@ keytool -genkeypair -v \
   -validity 10000
 ```
 
-`-alias upload` は、キーストア内の鍵を識別する名前（エイリアス）です[^alias]。生成された `upload-keystore.jks` は、コマンドを実行したプロジェクトのルートディレクトリに作成されます。後述の `keystore.properties` では、同ファイルを `storeFile=../upload-keystore.jks` として参照します。
+主なオプションの意味は次のとおりです。
 
+| オプション | 意味 |
+| ---------- | ---- |
+| `-keystore upload-keystore.jks` | 出力するキーストアのファイル名です。 |
+| `-alias upload` | キーストア内の鍵を識別する名前（エイリアス）です[^alias]。 |
+| `-keyalg RSA -keysize 2048` | 鍵のアルゴリズムと鍵長です。 |
+| `-validity 10000` | 鍵の有効期間を日数で指定します。 |
+
+生成された `upload-keystore.jks` は、コマンドを実行したプロジェクトのルートディレクトリに作成されます。後述の `keystore.properties` では、同ファイルを `storeFile=../upload-keystore.jks` として参照します。
+
+:::message
 鍵の有効期間は 25 年以上にします。Google Play で公開する鍵は、2033 年 10 月 22 日より後まで有効である必要があります[^validity]。`-validity 10000` は約 27 年に相当し、要件を満たします。
+:::
 
 [^keytool]: `keytool` は JDK に同梱される鍵とキーストアの管理コマンドです。詳細は [keytool](https://docs.oracle.com/javase/jp/21/docs/specs/man/keytool.html) を参照してください。
 [^alias]: エイリアスは、1 つのキーストアに複数の鍵を保管した場合に、対象の鍵を指定するための名前です。
@@ -70,6 +85,8 @@ keystore.properties
 
 `app/build.gradle.kts` に署名設定を追加します。`keystore.properties` があれば読み込み、なければ環境変数[^env]を使います。環境変数は「GitHub Actions で自動リリース」章の CI で利用します。
 
+### 認証情報の読み込み処理を追加する
+
 ファイル先頭（`plugins` ブロックより前）に読み込み処理を追加します。
 
 ```kotlin:app/build.gradle.kts
@@ -89,6 +106,8 @@ fun signingValue(propertyKey: String, envKey: String): String =
 ```
 
 [^env]: 環境変数は、OS やプロセスが保持する名前付きの値です。CI では秘密情報をリポジトリに置かず、環境変数として渡します。
+
+### 署名設定を release ビルドへ適用する
 
 `android { }` ブロック内に `signingConfigs` を追加し、`release` ビルドへ適用します。`buildTypes` の `release` は「サンプルアプリを作る」章で定義済みのため、新たに追加せず、同章のブロックを次の内容へ置き換えます。あわせて R8 によるコード縮小を有効化します。R8 の役割は「前提知識と用語」章を参照してください。
 
@@ -121,9 +140,15 @@ android {
 }
 ```
 
-署名値がどちらの経路でも得られない場合は、署名値を設定しないまま `signingConfigs` を組み立てます。`debug` ビルドや `assembleDebug` は署名設定を必要としないため、鍵を用意する前でも実行できます。署名が必要な `release` ビルド（`bundleRelease`）は、`keystore.properties` または環境変数を用意してから実行します。
+署名値がどちらの経路でも得られない場合は、署名値を設定しないまま `signingConfigs` を組み立てます。
 
+:::message
+`debug` ビルドや `assembleDebug` は署名設定を必要としないため、鍵を用意する前でも実行できます。署名が必要な `release` ビルド（`bundleRelease`）は、`keystore.properties` または環境変数を用意してから実行します。
+:::
+
+:::details アップロード鍵を紛失した場合
 アップロード鍵を紛失した場合は、Play Console から新しいアップロード鍵へのリセットを申請できます[^reset]。リセットはアプリ署名鍵に影響しないため、同じアプリの更新を継続できます。
+:::
 
 [^reset]: アップロード鍵のリセットは [アップロード鍵をリセットする](https://support.google.com/googleplay/android-developer/answer/7384423) を参照してください。
 

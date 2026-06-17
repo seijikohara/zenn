@@ -21,7 +21,9 @@ title: "サンプルアプリを作る"
 
 AGP・Gradle・バージョンカタログ・BOM・`compileSdk` / `targetSdk` / `minSdk` の各用語は「前提知識と用語」章にまとめています。意味が分からない場合は参照してください。
 
+:::message
 新規アプリとアプリ更新は、ターゲット API レベルを Android 15（API 35）以上にする必要があります（2025 年 8 月 31 日から適用）[^target-api]。ターゲット API レベルの要件は毎年 8 月ごろに 1 つ引き上げられ、2026 年 8 月には Android 16（API 36）が必須になる見込みです。本書は targetSdk を 36 に設定し、要件を満たします。
+:::
 
 [^target-api]: ターゲット API レベルの要件は [ターゲット API レベルの要件を満たす](https://developer.android.com/google/play/requirements/target-sdk) を参照してください。
 
@@ -40,7 +42,9 @@ Android Studio を起動し、ウェルカム画面で「New Project」を選び
 
 [^create-project]: ウィザードの各項目は [Create a project](https://developer.android.com/studio/projects/create-project) を参照してください。`Build configuration language` の既定は Kotlin DSL です。
 
+:::message
 `Package name` の値は、世界で一意になるよう、所有するドメインを逆順にした形で入力します。本書では例として `com.example.mycomposeapp` を使います。`Build configuration language` で `Kotlin DSL` を選ぶと、ビルド設定ファイルの拡張子が `.kts` になり、本書のコード（`app/build.gradle.kts`）と一致します。
+:::
 
 ## プロジェクトの構成
 
@@ -92,7 +96,11 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ```
 
-AGP 9.0 以降は Kotlin の組み込みサポートが既定で有効になり、`org.jetbrains.kotlin.android` プラグインは適用しません。適用するとビルドが失敗します[^builtin-kotlin]。Compose コンパイラプラグインは引き続き適用し、バージョンは組み込みの Kotlin に合わせます。AGP 9.2 は Kotlin 2.3.10 を同梱するため、カタログの `kotlin` も 2.3.10 にそろえます。
+AGP 9.0 以降は Kotlin の組み込みサポートが既定で有効になり、`org.jetbrains.kotlin.android` プラグインは適用しません。Compose コンパイラプラグインは引き続き適用し、バージョンは組み込みの Kotlin に合わせます。AGP 9.2 は Kotlin 2.3.10 を同梱するため、カタログの `kotlin` も 2.3.10 にそろえます。
+
+:::message alert
+`org.jetbrains.kotlin.android` プラグインを適用するとビルドが失敗します[^builtin-kotlin]。
+:::
 
 [^builtin-kotlin]: 組み込み Kotlin への移行は [Migrate to built-in Kotlin](https://developer.android.com/build/migrate-to-built-in-kotlin) を参照してください。
 
@@ -227,9 +235,18 @@ fun GreetingPreview() {
 
 ## アプリを実行する
 
-実装したアプリを、エミュレータまたは実機で実行します。Android Studio のツールバーで、対象とするデバイスを選びます。エミュレータがない場合は、Device Manager で仮想デバイスを作成します。実機を使う場合は、端末で USB デバッグを有効にしてから USB ケーブルで接続します。
+実装したアプリを、エミュレータまたは実機で実行します。Android Studio のツールバーで、対象とするデバイスを選びます。デバイスの準備は次のとおりです。
 
-対象デバイスを選んだら、ツールバーの Run（実行）ボタン（緑の三角アイコン）を押します。Android Studio がアプリをビルドし、選んだデバイスに APK をインストールして起動します。APK は端末にインストールできる Android アプリの実行ファイルです（「前提知識と用語」章を参照）。起動すると、`Hello, Play Store!` と表示する画面が現れます。
+- エミュレータがない場合は、Device Manager で仮想デバイスを作成します。
+- 実機を使う場合は、端末で USB デバッグを有効にしてから USB ケーブルで接続します。
+
+対象デバイスを選んだら、次の手順で実行します。
+
+1. ツールバーの Run（実行）ボタン（緑の三角アイコン）を押します。
+2. Android Studio がアプリをビルドし、選んだデバイスに APK をインストールして起動します。
+3. 起動すると、`Hello, Play Store!` と表示する画面が現れます。
+
+APK は端末にインストールできる Android アプリの実行ファイルです（「前提知識と用語」章を参照）。
 
 本書のサンプルは、上記の構成で実機ビルドを確認しています（`assembleDebug` による APK 生成を確認済み）。ビルドの検証手順は「トラブルシューティング」章で扱います。
 
