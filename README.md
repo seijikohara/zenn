@@ -34,9 +34,11 @@ npx zenn list:articles
 
 `.claude/` に Claude Code 用の支援を用意する。
 
-- `/new-article` — 規約どおりに新規記事を生成するスキル。
 - zenn-syntax — Zenn の全 Markdown 記法リファレンス（執筆時に参照）。
-- zenn-reviewer — frontmatter・文体・記法を点検するレビュー用エージェント。
+- technical-writer — 記事・本を執筆・編集・修正するテクニカルライター。仕上げに次のレビュー用エージェントを呼び出し、指摘が収束するまで反映する。
+- fact-checker — バージョン・API・数値・日付などの事実を一次情報で検証するエージェント。
+- zenn-reviewer — frontmatter・config.yaml・記法・プレビューを点検する Zenn 記法のレビュー用エージェント。
+- sample-code-verifier — サンプルコードをビルド・実行して検証するエージェント。
 
 ## 参考リンク
 

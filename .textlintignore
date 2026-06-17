@@ -2,3 +2,6 @@ node_modules/
 
 # 記法リファレンスはコード例中心の早見表のため、散文向けルールの対象外
 .claude/skills/zenn-syntax/reference.md
+
+# エージェント定義は指示文（プロンプト）であり、記事の散文向けルールの対象外
+.claude/agents/*.md

@@ -18,6 +18,9 @@
         "min_interval": 1,
         "severity": "warning"
       },
+      "ja-no-mixed-period": {
+        "allowPeriodMarks": [":"]
+      },
       "ja-no-weak-phrase": false,
       "no-exclamation-question-mark": false
     }
