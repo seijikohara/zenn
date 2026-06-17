@@ -1,0 +1,28 @@
+title: "Androidアプリを Google Play で公開する本 — 作成から自動化・収益化まで"
+summary: "サンプルアプリの作成から、署名・ストア公開・CI による自動リリース・収益化までの手順を解説します。"
+topics: ["android", "kotlin", "googleplay", "githubactions", "jetpackcompose"]
+published: false
+price: 0
+chapters:
+  - 01-introduction
+  - 02-glossary
+  - 03-setup
+  - 04-sample-app
+  - 05-app-signing
+  - 06-release-build
+  - 07-play-console
+  - 08-store-listing
+  - 09-app-content
+  - 10-testing
+  - 11-production
+  - 12-ci-github-actions
+  - 13-ci-alternatives
+  - 14-operations
+  - 15-monetization-overview
+  - 16-ads
+  - 17-in-app-purchase
+  - 18-subscriptions
+  - 19-paid-apps
+  - 20-troubleshooting
+  - 21-summary
+toc_depth: 2
