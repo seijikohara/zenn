@@ -1,0 +1,27 @@
+title: "mise で開発環境を一元管理する本 — 複数言語・ツールから env・タスク・CI まで"
+summary: "nvm・pyenv・rbenv などを mise に統合し、複数言語・CLI ツールのバージョン管理から環境変数・タスク・CI・チーム共有までを macOS 向けに解説します。"
+topics: ["mise", "nodejs", "python", "go", "githubactions"]
+published: false
+price: 0
+chapters:
+  - 01-introduction
+  - 02-what-is-mise
+  - 03-install
+  - 04-config-basics
+  - 05-version-management
+  - 06-nodejs
+  - 07-python
+  - 08-go
+  - 09-rust
+  - 10-jvm
+  - 11-ruby
+  - 12-cli-tools
+  - 13-env
+  - 14-tasks
+  - 15-team
+  - 16-ci
+  - 17-migration
+  - 18-operations
+  - 19-troubleshooting
+  - 20-summary
+toc_depth: 2
