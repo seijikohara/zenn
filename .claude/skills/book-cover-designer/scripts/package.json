@@ -1,0 +1,13 @@
+{
+  "name": "book-cover-designer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal Zenn book cover generator (SVG -> PNG) using M PLUS Rounded 1c Light.",
+  "bin": {
+    "book-cover": "generate.mjs"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2"
+  }
+}
