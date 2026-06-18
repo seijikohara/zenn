@@ -4,7 +4,13 @@ title: "Java / Kotlin"
 
 本章では、JVM（Java Virtual Machine）言語の開発環境を mise で管理する方法を扱います。Java と Kotlin は、JDK（Java Development Kit）と Gradle・Maven を共有します。Kotlin は JDK 上で動き、ビルドツールも Java と共通です。そのため、本章は Java と Kotlin をまとめて 1 章で扱います。読了後には、JDK のバージョンと Gradle・Maven を `mise.toml` で固定し、Java と Kotlin の双方で使える設定を書けるようになります。
 
-本章は第 3 章で mise を導入・有効化し、第 5 章でバージョン操作を理解した状態を前提とします。mise 自体のインストールは第 3 章、`mise.toml` の構文は第 4 章、`mise install` / `mise use` / `mise ls` などの操作は第 5 章で扱いました。本章はコマンドの基本操作を再説明せず、JVM 言語固有の事情に集中します。
+本章は第 3 章で mise を導入・有効化し、第 5 章でバージョン操作を理解した状態を前提とします。前提となる内容は、次の章で扱いました。
+
+- mise 自体のインストール: 第 3 章
+- `mise.toml` の構文: 第 4 章
+- `mise install` / `mise use` / `mise ls` などの操作: 第 5 章
+
+本章はコマンドの基本操作を再説明せず、JVM 言語固有の事情に集中します。
 
 本章のコマンド出力やバージョン番号は、執筆時点（2026 年 6 月、mise 2026.6.10[^mise-version]）の値です。実行する時期やツールの更新状況によって、表示されるバージョンは変わります。
 
@@ -35,7 +41,11 @@ mise が対応する主なディストリビューションを次の表にまと
 | `graalvm-community` | GraalVM Community Edition | Oracle |
 | `oracle-graalvm` | Oracle GraalVM | Oracle |
 
-GraalVM を指定する接頭辞は、`graalvm-community`（コミュニティ版）または `oracle-graalvm`（Oracle 版）です。接頭辞 `graalvm` 単独は、Java の機能リリースとは別系統の旧バージョン体系を指します。`graalvm-21` は旧 GraalVM の製品バージョン 21 系（Java 8・11・17 上のビルド）に解決し、Java 21 のビルドにはなりません。Java 21 の GraalVM を使う場合は、`graalvm-community-21` または `oracle-graalvm-21` と指定します。
+GraalVM を指定する接頭辞は、`graalvm-community`（コミュニティ版）または `oracle-graalvm`（Oracle 版）です。
+
+:::message alert
+接頭辞 `graalvm` 単独は、Java の機能リリースとは別系統の旧バージョン体系を指します。`graalvm-21` は旧 GraalVM の製品バージョン 21 系（Java 8・11・17 上のビルド）に解決し、Java 21 のビルドにはなりません。Java 21 の GraalVM を使う場合は、`graalvm-community-21` または `oracle-graalvm-21` と指定します。
+:::
 
 :::message
 ディストリビューションは、配布元・ライセンス・サポート期間が異なります。チームでは 1 つのディストリビューションに統一します。長期サポート（Long Term Support、LTS）を重視する場合は Eclipse Temurin が選択肢になります。配布元の選定方針はプロジェクトごとに定めます。
@@ -184,7 +194,14 @@ Java version: 21.0.11, vendor: Eclipse Adoptium, runtime: ~/.local/share/mise/in
 
 Gradle と Maven には、ラッパー（Gradle Wrapper・Maven Wrapper）があります。ラッパーは、プロジェクトに同梱したスクリプト（`gradlew`・`mvnw`）で、プロジェクトが指定したバージョンの Gradle・Maven を自動で取得して実行します[^gradle-wrapper][^maven-wrapper]。ラッパーは Gradle・Maven のバージョンを固定する仕組みで、mise の `[tools]` とは別系統です。
 
-mise が宣言する `gradle`・`maven` は、`gradle`・`mvn` コマンドの本体を取得します。ラッパーの `gradlew`・`mvnw` は、ラッパー自身が記録したバージョンを取得します。両者は固定の仕組みが独立しており、mise の公式ドキュメントはラッパーとの連携を規定していません。ラッパーを使うプロジェクトでは、ビルドツールのバージョンをラッパーで固定し、mise では JDK を固定する分担も選べます。バージョンをそろえる場合は、`mise.toml` とラッパーの記録を同じバージョンに合わせます。
+mise とラッパーは、取得する対象が異なります。
+
+| 仕組み | 取得する対象 |
+| --- | --- |
+| mise の `[tools]`（`gradle`・`maven`） | `gradle`・`mvn` コマンドの本体 |
+| ラッパー（`gradlew`・`mvnw`） | ラッパー自身が記録したバージョン |
+
+両者は固定の仕組みが独立しており、mise の公式ドキュメントはラッパーとの連携を規定していません。ラッパーを使うプロジェクトでは、ビルドツールのバージョンをラッパーで固定し、mise では JDK を固定する分担も選べます。バージョンをそろえる場合は、`mise.toml` とラッパーの記録を同じバージョンに合わせます。
 
 :::message
 ラッパーは、`JAVA_HOME` が指す JDK を使ってビルドします。mise で JDK を固定すれば、ラッパーで取得した Gradle・Maven も mise の JDK でビルドします。ビルドツール本体を mise とラッパーのどちらで固定するかは、プロジェクトの方針で決めます。

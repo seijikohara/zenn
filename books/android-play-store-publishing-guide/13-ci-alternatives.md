@@ -25,9 +25,15 @@ play {
 }
 ```
 
-`./gradlew publishReleaseBundle` で AAB を配信します。CI では、鍵をファイルへ置かず、環境変数 `ANDROID_PUBLISHER_CREDENTIALS` へ JSON の中身を渡せます。
+`./gradlew publishReleaseBundle` で AAB を配信します。
 
+:::message
+CI では、鍵をファイルへ置かず、環境変数 `ANDROID_PUBLISHER_CREDENTIALS` へ JSON の中身を渡せます。
+:::
+
+:::message
 バージョン 4.0.0 は AGP 9 に対応します。AGP 8 以前のプロジェクトでは、バージョン 3.13.0 を使います。
+:::
 
 ## fastlane を使う場合
 
@@ -70,7 +76,9 @@ CI で使うツールの 2026 年 6 月時点のバージョンです。
 | actions/setup-java | v5 |
 | gradle/actions/setup-gradle | v6 |
 
+:::message
 サプライチェーン対策として、Action をコミット SHA で固定する方法もあります。サービスアカウントの権限は最小限に保ち、シークレットはログへ出力しないよう注意します。
+:::
 
 ## 確認
 
