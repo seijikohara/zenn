@@ -9,6 +9,9 @@
 //  - line breaks chosen at phrase / particle boundaries (book-quality wrapping),
 //    with kinsoku handling; manual breaks via "|" are honored for full control
 //
+// Style: const-only / immutable — no reassignment. Loops are expressed with
+// map / reduce / Array.from, and the wrapping DP with an immutable fold.
+//
 // Usage:
 //   node generate.mjs --title "..." [--subtitle "..."] [--author "..."]
 //                     [--theme lavender] --out path/cover.png [--keep-svg]
@@ -27,74 +30,57 @@ const FONT_PATH = join(FONT_DIR, 'MPLUSRounded1c-Light.ttf');
 const FONT_URL =
   'https://raw.githubusercontent.com/google/fonts/main/ofl/mplusrounded1c/MPLUSRounded1c-Light.ttf';
 
-async function ensureFont() {
+const ensureFont = async () => {
   if (existsSync(FONT_PATH)) return;
   mkdirSync(FONT_DIR, { recursive: true });
   const res = await fetch(FONT_URL);
   if (!res.ok) throw new Error(`font download failed: ${res.status} ${FONT_URL}`);
   writeFileSync(FONT_PATH, Buffer.from(await res.arrayBuffer()));
-}
+};
 
 // --- text measurement (Japanese-aware) ---
-function isWide(cp) {
-  return (
-    (cp >= 0x3000 && cp <= 0x30ff) ||
-    (cp >= 0x3400 && cp <= 0x9fff) ||
-    (cp >= 0xf900 && cp <= 0xfaff) ||
-    (cp >= 0xff00 && cp <= 0xffef)
-  );
-}
+const isWide = (cp) =>
+  (cp >= 0x3000 && cp <= 0x30ff) ||
+  (cp >= 0x3400 && cp <= 0x9fff) ||
+  (cp >= 0xf900 && cp <= 0xfaff) ||
+  (cp >= 0xff00 && cp <= 0xffef);
+
 const HALF_RATIO = 0.54;
 const SPACE_RATIO = 0.36;
-function textWidth(s, fs) {
-  let w = 0;
-  for (const ch of s) w += (ch === ' ' ? SPACE_RATIO : isWide(ch.codePointAt(0)) ? 1 : HALF_RATIO) * fs;
-  return w;
-}
+const textWidth = (s, fs) =>
+  [...s].reduce(
+    (w, ch) => w + (ch === ' ' ? SPACE_RATIO : isWide(ch.codePointAt(0)) ? 1 : HALF_RATIO) * fs,
+    0
+  );
 
 // --- segmentation: keep Latin/digit runs whole, break only between segments ---
-function segments(s) {
-  const segs = [];
-  let buf = '';
-  let space = false;
-  const flush = () => {
-    if (buf) {
-      segs.push({ text: buf, space });
-      buf = '';
-      space = false;
-    }
-  };
-  for (const ch of s) {
-    if (ch === ' ') {
-      flush();
-      space = true;
-    } else if (isWide(ch.codePointAt(0))) {
-      flush();
-      segs.push({ text: ch, space });
-      space = false;
-    } else {
-      buf += ch;
-    }
-  }
-  flush();
-  return segs;
-}
-function lineWidth(segs, a, b, fs) {
-  let w = 0;
-  for (let k = a; k <= b; k++) {
-    if (k > a && segs[k].space) w += SPACE_RATIO * fs;
-    w += textWidth(segs[k].text, fs);
-  }
-  return w;
-}
-function lineText(segs, a, b) {
-  let s = '';
-  for (let k = a; k <= b; k++) {
-    if (k > a && segs[k].space) s += ' ';
-    s += segs[k].text;
-  }
-  return s;
-}
+const segments = (s) => {
+  const end = [...s].reduce(
+    ({ segs, buf, space }, ch) => {
+      if (ch === ' ') {
+        return { segs: buf ? [...segs, { text: buf, space }] : segs, buf: '', space: true };
+      }
+      if (isWide(ch.codePointAt(0))) {
+        const flushed = buf ? [...segs, { text: buf, space }] : segs;
+        return { segs: [...flushed, { text: ch, space: buf ? false : space }], buf: '', space: false };
+      }
+      return { segs, buf: buf + ch, space };
+    },
+    { segs: [], buf: '', space: false }
+  );
+  return end.buf ? [...end.segs, { text: end.buf, space: end.space }] : end.segs;
+};
+
+const indexRange = (a, b) => Array.from({ length: b - a + 1 }, (_, k) => a + k);
+const lineWidth = (segs, a, b, fs) =>
+  indexRange(a, b).reduce(
+    (w, k) => w + (k > a && segs[k].space ? SPACE_RATIO * fs : 0) + textWidth(segs[k].text, fs),
+    0
+  );
+const lineText = (segs, a, b) =>
+  indexRange(a, b)
+    .map((k) => (k > a && segs[k].space ? ' ' : '') + segs[k].text)
+    .join('');
 
 // Good places to END a line (after particles / punctuation).
 const BREAK_AFTER = new Set([
@@ -110,58 +96,62 @@ const lastCh = (t) => [...t][[...t].length - 1];
 const firstCh = (t) => [...t][0];
 
 // Book-quality wrapping via DP: minimize raggedness + penalties for breaking at
-// non-phrase boundaries and for kinsoku violations.
-function wrapDP(s, fs, maxW) {
+// non-phrase boundaries and for kinsoku violations. Built as an immutable fold
+// from the last segment back to the first, then reconstructed by recursion.
+const wrapDP = (s, fs, maxW) => {
   const segs = segments(s);
   const n = segs.length;
   if (n === 0) return [''];
-  const INF = 1e15;
-  const dp = new Array(n + 1).fill(INF);
-  const nxt = new Array(n + 1).fill(-1);
-  dp[n] = 0;
-  for (let i = n - 1; i >= 0; i--) {
-    for (let j = i; j < n; j++) {
-      const w = lineWidth(segs, i, j, fs);
-      if (w > maxW && j > i) break;
-      const isLast = j === n - 1;
-      let cost = isLast ? 0 : Math.pow(maxW - w, 2) / 1000;
-      if (!isLast) {
-        if (!BREAK_AFTER.has(lastCh(segs[j].text))) cost += 320;
-        if (NO_START.has(firstCh(segs[j + 1].text))) cost += 6000;
-      }
-      const total = cost + dp[j + 1];
-      if (total < dp[i]) {
-        dp[i] = total;
-        nxt[i] = j;
-      }
-    }
-  }
-  const lines = [];
-  let i = 0;
-  while (i < n && nxt[i] >= 0) {
-    lines.push(lineText(segs, i, nxt[i]));
-    i = nxt[i] + 1;
-  }
-  return lines;
-}
+  const lineCost = (i, j) => {
+    const w = lineWidth(segs, i, j, fs);
+    const isLast = j === n - 1;
+    const ragged = isLast ? 0 : (maxW - w) ** 2 / 1000;
+    const brk = isLast
+      ? 0
+      : (BREAK_AFTER.has(lastCh(segs[j].text)) ? 0 : 320) +
+        (NO_START.has(firstCh(segs[j + 1].text)) ? 6000 : 0);
+    return ragged + brk;
+  };
+  // Candidate end indices for a line starting at i (a fitting prefix; at least [i]).
+  const validJs = (i) => {
+    const fitting = indexRange(i, n - 1).filter((j) => lineWidth(segs, i, j, fs) <= maxW);
+    return fitting.length ? fitting : [i];
+  };
+  const table = Array.from({ length: n }, (_, k) => n - 1 - k).reduce(
+    (tbl, i) =>
+      Object.assign({}, tbl, {
+        [i]: validJs(i).reduce(
+          (best, j) => {
+            const total = lineCost(i, j) + tbl[j + 1].cost;
+            return total < best.cost ? { cost: total, j } : best;
+          },
+          { cost: Infinity, j: -1 }
+        ),
+      }),
+    { [n]: { cost: 0, j: -1 } }
+  );
+  const reconstruct = (i) =>
+    i >= n ? [] : [lineText(segs, i, table[i].j), ...reconstruct(table[i].j + 1)];
+  return reconstruct(0);
+};
+
+const rangeDesc = (hi, lo) => Array.from({ length: hi - lo + 1 }, (_, k) => hi - k);
 
 // Title layout: honor manual "|" breaks; otherwise wrap with DP and pick the
 // largest font in [lo, hi] that fits within maxLines.
-function layoutTitle(title, maxW, maxLines, hi, lo) {
+const layoutTitle = (title, maxW, maxLines, hi, lo) => {
   if (title.includes('|')) {
-    const lines = title.split('|').map((s) => s.trim()).filter(Boolean);
-    let fs = hi;
-    for (; fs > lo; fs--) if (lines.every((l) => textWidth(l, fs) <= maxW)) break;
+    const lines = title.split('|').map((x) => x.trim()).filter(Boolean);
+    const fs = rangeDesc(hi, lo + 1).find((f) => lines.every((l) => textWidth(l, f) <= maxW)) ?? lo;
     return { fs, lines };
   }
-  for (let fs = hi; fs >= lo; fs--) {
-    const lines = wrapDP(title, fs, maxW);
-    if (lines.length <= maxLines && lines.every((l) => textWidth(l, fs) <= maxW)) {
-      return { fs, lines };
-    }
-  }
-  return { fs: lo, lines: wrapDP(title, lo, maxW) };
-}
+  const fs =
+    rangeDesc(hi, lo).find((f) => {
+      const lines = wrapDP(title, f, maxW);
+      return lines.length <= maxLines && lines.every((l) => textWidth(l, f) <= maxW);
+    }) ?? lo;
+  return { fs, lines: wrapDP(title, fs, maxW) };
+};
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -229,21 +219,24 @@ const THEMES = {
   },
 };
 
-function buildBackground(theme, W, H) {
-  let defs = '';
-  let rects = `  <rect width="${W}" height="${H}" fill="${theme.base}"/>\n`;
-  theme.layers.forEach((ly, i) => {
+const layerDef = (ly, id) =>
+  ly.type === 'radial'
+    ? `    <radialGradient id="${id}" cx="${ly.cx}" cy="${ly.cy}" r="${ly.r}"><stop offset="0%" stop-color="${ly.color}"/><stop offset="100%" stop-color="${ly.color}" stop-opacity="0"/></radialGradient>\n`
+    : `    <linearGradient id="${id}" x1="${ly.x1}" y1="${ly.y1}" x2="${ly.x2}" y2="${ly.y2}">${ly.stops
+        .map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`)
+        .join('')}</linearGradient>\n`;
+
+const buildBackground = (theme, W, H) => {
+  const parts = theme.layers.map((ly, i) => {
     const id = `bg${i}`;
-    if (ly.type === 'radial') {
-      defs += `    <radialGradient id="${id}" cx="${ly.cx}" cy="${ly.cy}" r="${ly.r}"><stop offset="0%" stop-color="${ly.color}"/><stop offset="100%" stop-color="${ly.color}" stop-opacity="0"/></radialGradient>\n`;
-    } else {
-      const stops = ly.stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('');
-      defs += `    <linearGradient id="${id}" x1="${ly.x1}" y1="${ly.y1}" x2="${ly.x2}" y2="${ly.y2}">${stops}</linearGradient>\n`;
-    }
-    rects += `  <rect width="${W}" height="${H}" fill="url(#${id})"/>\n`;
+    return { def: layerDef(ly, id), rect: `  <rect width="${W}" height="${H}" fill="url(#${id})"/>\n` };
   });
-  return { defs, rects };
-}
+  return {
+    defs: parts.map((p) => p.def).join(''),
+    rects:
+      `  <rect width="${W}" height="${H}" fill="${theme.base}"/>\n` + parts.map((p) => p.rect).join(''),
+  };
+};
 
 // Soft glow behind text = blurred light copies stacked under the sharp glyphs.
 // Stacking several copies makes the halo dense enough to read on a light
@@ -254,20 +247,19 @@ const GLOW = {
   subStd: 4.5, subRepeat: 3, subOpacity: 0.98,
 };
 
-function textPair(x, y, anchor, fs, fill, str, kind) {
+const textPair = (x, y, anchor, fs, fill, str, kind) => {
   const common = `font-family="${FONT_FAMILY}" font-weight="300" font-size="${fs}" letter-spacing="0.5"${anchor ? ` text-anchor="${anchor}"` : ''}`;
   const filt = kind === 'title' ? 'glowT' : 'glowS';
   const op = kind === 'title' ? GLOW.titleOpacity : GLOW.subOpacity;
   const reps = kind === 'title' ? GLOW.titleRepeat : GLOW.subRepeat;
-  let out = '';
-  for (let i = 0; i < reps; i++) {
-    out += `  <text x="${x}" y="${y}" ${common} fill="${GLOW.color}" opacity="${op}" filter="url(#${filt})">${esc(str)}</text>\n`;
-  }
-  out += `  <text x="${x}" y="${y}" ${common} fill="${fill}">${esc(str)}</text>\n`;
-  return out;
-}
+  const glows = Array.from(
+    { length: reps },
+    () => `  <text x="${x}" y="${y}" ${common} fill="${GLOW.color}" opacity="${op}" filter="url(#${filt})">${esc(str)}</text>\n`
+  ).join('');
+  return `${glows}  <text x="${x}" y="${y}" ${common} fill="${fill}">${esc(str)}</text>\n`;
+};
 
-function buildSVG({ title, subtitle, author, theme }) {
+const buildSVG = ({ title, subtitle, author, theme }) => {
   const W = 500;
   const H = 700;
   const mL = 52;
@@ -282,26 +274,19 @@ function buildSVG({ title, subtitle, author, theme }) {
   const centerY = 366;
   const top = centerY - blockH / 2;
 
-  let texts = '';
-  titleLines.forEach((ln, i) => {
-    const y = (top + i * lineH + titleFS).toFixed(1);
-    texts += textPair(mL, y, null, titleFS, ink.title, ln, 'title');
-  });
+  const titleTexts = titleLines
+    .map((ln, i) => textPair(mL, (top + i * lineH + titleFS).toFixed(1), null, titleFS, ink.title, ln, 'title'))
+    .join('');
 
-  if (subtitle) {
-    let subFS = 20;
-    while (subFS > 14 && textWidth(subtitle, subFS) > maxW) subFS--;
-    const subLines = wrapDP(subtitle, subFS, maxW);
-    const start = top + blockH + 36 + subFS;
-    subLines.forEach((ln, i) => {
-      const y = (start + i * (subFS * 1.5)).toFixed(1);
-      texts += textPair(mL, y, null, subFS, ink.subtitle, ln, 'sub');
-    });
-  }
+  const subFS = subtitle ? (rangeDesc(20, 14).find((f) => textWidth(subtitle, f) <= maxW) ?? 14) : 0;
+  const subStart = top + blockH + 36 + subFS;
+  const subTexts = subtitle
+    ? wrapDP(subtitle, subFS, maxW)
+        .map((ln, i) => textPair(mL, (subStart + i * (subFS * 1.5)).toFixed(1), null, subFS, ink.subtitle, ln, 'sub'))
+        .join('')
+    : '';
 
-  if (author) {
-    texts += textPair(W - mR, H - mB, 'end', 17, ink.author, author, 'sub');
-  }
+  const authorText = author ? textPair(W - mR, H - mB, 'end', 17, ink.author, author, 'sub') : '';
 
   const { defs, rects } = buildBackground(theme, W, H);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
@@ -309,27 +294,24 @@ function buildSVG({ title, subtitle, author, theme }) {
     <filter id="glowT" x="-40%" y="-80%" width="180%" height="260%"><feGaussianBlur stdDeviation="${GLOW.titleStd}"/></filter>
     <filter id="glowS" x="-40%" y="-80%" width="180%" height="260%"><feGaussianBlur stdDeviation="${GLOW.subStd}"/></filter>
 ${defs}  </defs>
-${rects}${texts}</svg>`;
-}
+${rects}${titleTexts}${subTexts}${authorText}</svg>`;
+};
 
-function parseArgs(argv) {
-  const a = {};
-  for (let i = 0; i < argv.length; i++) {
-    const k = argv[i];
-    if (!k.startsWith('--')) continue;
-    const key = k.slice(2);
-    const next = argv[i + 1];
-    if (next === undefined || next.startsWith('--')) {
-      a[key] = true;
-    } else {
-      a[key] = next;
-      i++;
-    }
-  }
-  return a;
-}
+const parseArgs = (argv) =>
+  argv.reduce(
+    (st, tok, i) => {
+      if (st.skip) return { ...st, skip: false };
+      if (!tok.startsWith('--')) return st;
+      const key = tok.slice(2);
+      const next = argv[i + 1];
+      return next === undefined || next.startsWith('--')
+        ? { ...st, args: { ...st.args, [key]: true } }
+        : { args: { ...st.args, [key]: next }, skip: true };
+    },
+    { args: {}, skip: false }
+  ).args;
 
-async function main() {
+const main = async () => {
   const a = parseArgs(process.argv.slice(2));
   if (!a.title || !a.out) {
     console.error(
@@ -351,7 +333,7 @@ async function main() {
   const png = resvg.render().asPng();
   writeFileSync(outPng, png);
   console.log(`wrote ${outPng} (${(png.length / 1024).toFixed(1)} KB, theme=${a.theme || 'lavender'})`);
-}
+};
 
 main().catch((e) => {
   console.error(e);
