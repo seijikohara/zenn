@@ -47,32 +47,23 @@ const LEAK_RE =
 // 提示するターンが自分で誤検知し、執筆セッションを差し戻しループへ追い込む。
 // 未クローズのフェンスはそのまま残し、フェンス後の本物の漏れを隠さない。
 const stripClosedFences = (text) => {
-  const out = []
-  let fenceChar = null
-  let fenceLen = 0
-  let held = []
-  for (const line of text.split('\n')) {
-    const open = line.match(/^[ \t]*(`{3,}|~{3,})/)
-    if (fenceChar === null) {
-      if (open) {
-        fenceChar = open[1][0]
-        fenceLen = open[1].length
-        held = [line]
-      } else {
-        out.push(line)
+  const { out, held, fence } = text.split('\n').reduce(
+    (acc, line) => {
+      if (acc.fence === null) {
+        const open = line.match(/^[ \t]*(`{3,}|~{3,})/)
+        return open
+          ? { out: acc.out, held: [line], fence: { char: open[1][0], len: open[1].length } }
+          : { out: [...acc.out, line], held: [], fence: null }
       }
-    } else {
       const close = line.match(/^[ \t]*(`{3,}|~{3,})[ \t]*$/)
-      if (close && close[1][0] === fenceChar && close[1].length >= fenceLen) {
-        fenceChar = null
-        held = []
-      } else {
-        held.push(line)
-      }
-    }
-  }
-  if (fenceChar !== null) out.push(...held) // 未クローズのフェンスは残し、漏れを隠さない
-  return out.join('\n')
+      return close && close[1][0] === acc.fence.char && close[1].length >= acc.fence.len
+        ? { out: acc.out, held: [], fence: null }
+        : { out: acc.out, held: [...acc.held, line], fence: acc.fence }
+    },
+    { out: [], held: [], fence: null },
+  )
+  // 未クローズのフェンスは残し、フェンス後の本物の漏れを隠さない。
+  return (fence === null ? out : [...out, ...held]).join('\n')
 }
 
 const tryParse = (line) => {
@@ -683,32 +674,23 @@ const utcSeconds = () => `${new Date().toISOString().slice(0, 19)}+00:00`
 // マークアップ（漏れ自体を解説する記事など）はフェンス内にある。
 // 未クローズのフェンスはそのまま残し、フェンス後の本物の漏れを隠さない。
 const stripClosedFences = (text) => {
-  const out = []
-  let fenceChar = null
-  let fenceLen = 0
-  let held = []
-  for (const line of text.split('\n')) {
-    const open = line.match(/^[ \t]*(`{3,}|~{3,})/)
-    if (fenceChar === null) {
-      if (open) {
-        fenceChar = open[1][0]
-        fenceLen = open[1].length
-        held = [line]
-      } else {
-        out.push(line)
+  const { out, held, fence } = text.split('\n').reduce(
+    (acc, line) => {
+      if (acc.fence === null) {
+        const open = line.match(/^[ \t]*(`{3,}|~{3,})/)
+        return open
+          ? { out: acc.out, held: [line], fence: { char: open[1][0], len: open[1].length } }
+          : { out: [...acc.out, line], held: [], fence: null }
       }
-    } else {
       const close = line.match(/^[ \t]*(`{3,}|~{3,})[ \t]*$/)
-      if (close && close[1][0] === fenceChar && close[1].length >= fenceLen) {
-        fenceChar = null
-        held = []
-      } else {
-        held.push(line)
-      }
-    }
-  }
-  if (fenceChar !== null) out.push(...held) // 未クローズは残し、漏れを隠さない
-  return out.join('\n')
+      return close && close[1][0] === acc.fence.char && close[1].length >= acc.fence.len
+        ? { out: acc.out, held: [], fence: null }
+        : { out: acc.out, held: [...acc.held, line], fence: acc.fence }
+    },
+    { out: [], held: [], fence: null },
+  )
+  // 未クローズは残し、フェンス後の本物の漏れを隠さない。
+  return (fence === null ? out : [...out, ...held]).join('\n')
 }
 ```
 
