@@ -6,6 +6,10 @@ topics: ["アーキテクチャ", "設計", "ドメイン駆動設計", "kotlin"
 published: true
 ---
 
+:::message
+本記事は、内容の生成に AI を利用している。
+:::
+
 ## 導入: ビジネスロジックを依存方向でどう守るか
 
 アプリケーションの中核には、ビジネスのルールを表現するコードが存在する。注文の金額を計算し、与信枠を検査し、状態の遷移を許可または拒否する。一方で、ビジネスルールの周囲には、データベース・Web フレームワーク・外部 API といった技術的な詳細が取り巻く。技術的な詳細は、ビジネスルールより速く・頻繁に変わる。データベースは載せ替わり、フレームワークは更新され、外部 API は仕様を変える。ビジネスルールが技術的な詳細へ依存すると、詳細の変更がルールへ波及する。
@@ -37,7 +41,11 @@ graph TB
   Q --> A3["変更の単位を<br/>層にするか機能にするか"]
 ```
 
-各様式は 3 つの軸の上で異なる位置を占める。本記事は、構造を何で切るかという起点で各様式を 3 つの族に束ねる。層で分ける族・内側を境界で守る族・機能で縦に切る族の 3 つを順に見ていく。
+各様式は 3 つの軸の上で異なる位置を占める。本記事は、構造を何で切るかという起点から各様式を 3 つの族に束ねる。次の 3 つの族を順に見ていく。
+
+- 層で分ける族
+- 内側を境界で守る族
+- 機能で縦に切る族
 
 ## 層で分ける
 
@@ -96,12 +104,12 @@ class JdbcOrderRepository : OrderRepository {
 
 - レイヤードアーキテクチャは、層の数が少なく、ドメインが薄い CRUD（Create / Read / Update / Delete）中心のシステムで機能する。
 - ドメインルールが厚く、技術的な詳細の変更からルールを守る必要がある領域では、DIP を導入した同心円系の様式へ移る判断が要る。
-- 層を増やすほど、層をまたぐ単純なデータの転記（マッピング）が増える。層の数は要求に見合う最小限に保つ。
+- 層を増やすほど、層をまたぐ単純なデータの転記（マッピング）が増える。層の数は要求を満たす最小限に保つ。
 
 #### 担い手と論争
 
 - 整理・普及: 単一の発明者はいない。古典的な n 層アーキテクチャとして広く使われる。Frank Buschmann ほかが『Pattern-Oriented Software Architecture, Volume 1』（1996）で Layers をアーキテクチャパターンとして文書化した[^layered-posa]。Eric Evans が『Domain-Driven Design』（2003）でレイヤード化を整理した[^layered-evans]。Martin Fowler は『Patterns of Enterprise Application Architecture』（2002）で多層構成のパターンを整理した[^layered-fowler]。
-- 批判・慎重論: Mark Richards は、各層が論理をほとんど持たず要求を素通しする状態を Architecture Sinkhole Anti-Pattern と名づけ、約 8 割の要求が素通しなら様式が不適合だと論じる[^layered-sinkhole]。Mark Richards と Neal Ford は『Fundamentals of Software Architecture』（2020）で、レイヤードは技術分割でありドメインが全層に分散して全体的なアジリティを欠くと指摘する[^layered-fundamentals]。
+- 批判・慎重論: Mark Richards は、各層が論理をほとんど持たず要求を素通しする状態を Architecture Sinkhole Anti-Pattern と名づけ、約 8 割の要求が素通しなら様式として不適合だと論じる[^layered-sinkhole]。Mark Richards と Neal Ford は『Fundamentals of Software Architecture』（2020）で、レイヤードは技術分割でありドメインが全層に分散して全体的なアジリティを欠くと指摘する[^layered-fundamentals]。
 
 ## 内側を境界で守る（同心円・依存性逆転）
 
@@ -111,7 +119,7 @@ class JdbcOrderRepository : OrderRepository {
 
 #### 問題起点
 
-アプリケーションを、外部とのやり取りの種類から独立させたい。同じビジネスロジックを、Web からも・バッチからも・テストからも同じ形で駆動したい。データベースを本番用とインメモリ用で差し替えたい。入出力の経路（UI・API・DB・メッセージング）がビジネスロジックへ食い込むと、経路ごとにロジックが分岐し、テストが外部環境に縛られる。
+アプリケーションを、外部とのやり取りの種類から独立させたい。同じビジネスロジックを、Web・バッチ・テストのいずれからも同じ形で駆動したい。データベースを本番用とインメモリ用で差し替えたい。入出力の経路（UI・API・DB・メッセージング）がビジネスロジックへ食い込むと、経路ごとにロジックが分岐し、テストが外部環境に縛られる。
 
 #### 論理
 
@@ -169,7 +177,7 @@ class OrderApplication(private val repository: OrderRepository) : PlaceOrderUseC
 
 適用範囲は次のとおり。
 
-- ヘキサゴナルアーキテクチャは、外部接点が複数あり、接点を差し替える要求がある領域で効果を発揮する。テストで外部依存をインメモリ実装に置換したい場合に向く。
+- ヘキサゴナルアーキテクチャは、外部接点が複数あり、接点を差し替える要求がある領域で効果を発揮する。テストで外部依存をインメモリ実装へ置換したい場合に向く。
 - 外部接点が単一で差し替えの要求がない領域では、ポートの抽象は過剰投資になる。
 
 #### 担い手と論争
@@ -329,7 +337,7 @@ class PlaceOrder(private val gateway: OrderGateway) {
 
 ## 機能で縦に切る
 
-機能で縦に切る族は、構造の出発点をビジネスの機能（フィーチャー）に置く。技術的な層で水平に切る代わりに、1 つの機能を入口から永続化まで縦に貫く 1 つのスライスとして束ねる。変更の単位を層ではなく機能に合わせる。同心円系への反動として位置づく。
+機能で縦に切る族は、構造の出発点をビジネスの機能（フィーチャー）に置く。技術的な層で水平に切るのではなく、1 つの機能を入口から永続化まで縦断する 1 つのスライスとして束ねる。変更の単位を層ではなく機能に合わせる。同心円系への反動として位置づく。
 
 ### 垂直スライスアーキテクチャ
 
@@ -494,7 +502,7 @@ graph LR
 5 つのアーキテクチャ様式は、共通の問題への異なる回答である。優劣の序列はなく、ドメインの性質・規模・変更の質によって最適が変わる。判断の手がかりを 3 点で整理する。
 
 - ドメインルールの厚さが境界の数を決める。ルールが薄ければレイヤードで足り、厚ければ DIP で守る同心円系が報われる。
-- 変更の入り方が切る向きを決める。機能ごとに独立して変更が入るなら垂直スライス、技術的な層ごとに変更が局所化するなら同心円系が向く。
+- 変更の入り方が切る向きを決める。機能ごとに独立して変更が入るなら垂直スライス、技術的な層ごとに変更を局所化できるなら同心円系を選ぶ。
 - アプリケーションの寿命がボイラープレートの許容量を決める。寿命が長くルールの寿命がフレームワークを上回るなら、同心円系の境界が報われる。短命なら過剰になる。
 
 アーキテクチャ様式は排他ではない。ヘキサゴナル・オニオン・クリーンは DIP を共有核とする対等な表現であり、垂直スライスはスライス内部で同心円系を組み合わせられる。1 つのシステムでも、境界ごとに異なる様式を選べる。ルールの厚い中核には DIP で守る同心円系を、薄い周辺にはレイヤードを、機能が独立する領域には垂直スライスを割り当てる判断が、現実の設計である。共通核の DIP は、どの様式を選んでも「最も変わりやすい詳細に、最も重要なルールを依存させない」という一点へ収束する。
@@ -515,7 +523,7 @@ graph LR
 [^dip-martin]: Robert C. Martin, "The Dependency Inversion Principle"（1996）。<https://web.archive.org/web/20110714224327/http://www.objectmentor.com/resources/articles/dip.pdf>
 [^layered-evans]: Eric Evans, 『Domain-Driven Design: Tackling Complexity in the Heart of Software』（Addison-Wesley、2003）。<https://www.domainlanguage.com/ddd/>
 [^layered-fowler]: Martin Fowler, 『Patterns of Enterprise Application Architecture』（Addison-Wesley、2002）。<https://martinfowler.com/books/eaa.html>
-[^hex-cockburn]: Alistair Cockburn, "Hexagonal architecture"。本人サイト（<https://alistair.cockburn.us/hexagonal-architecture/>）は TLS 証明書失効で参照できないため、1994 年の図を起点に 2005 年へ Ports and Adapters へ改称した経緯は本人インタビューと Wikipedia で確認した。"Interview with Alistair Cockburn"（jmgarridopaz.github.io、2020）<https://jmgarridopaz.github.io/content/interviewalistair.html>、"Hexagonal architecture (software)"（Wikipedia）<https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)>。
+[^hex-cockburn]: Alistair Cockburn, "Hexagonal architecture"。本人サイト（<https://alistair.cockburn.us/hexagonal-architecture/>）は TLS 証明書失効で参照できないため、1994 年の図を起点に 2005 年へ Ports and Adapters と改称した経緯は本人インタビューと Wikipedia で確認した。"Interview with Alistair Cockburn"（jmgarridopaz.github.io、2020）<https://jmgarridopaz.github.io/content/interviewalistair.html>、"Hexagonal architecture (software)"（Wikipedia）<https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)>。
 [^onion-palermo]: Jeffrey Palermo, "The Onion Architecture: part 1"（2008）。<https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/>
 [^clean-martin]: Robert C. Martin, "The Clean Architecture"（2012）。<https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html>
 [^clean-book]: Robert C. Martin, 『Clean Architecture: A Craftsman's Guide to Software Structure and Design』（Prentice Hall、2017）。<https://www.pearson.com/en-us/subject-catalog/p/clean-architecture-a-craftsmans-guide-to-software-structure-and-design/P200000009528/>
