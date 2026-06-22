@@ -26,7 +26,7 @@ tools: Read, Grep, Glob, Edit, Write, Bash, Task
   - 自動修正できる指摘は `npm run lint:fix`（または `npx textlint --fix <対象ファイル>`）で直し、残りを手で直す。
 - textlint を 0 エラーで通すまで、編集の完了を報告しない。エラーが残る状態で「完了」と報告しない。
 - `.textlintrc.json` を唯一の正とする。1 文 120 字以内・読点 3 個以内・文末「。」・半角カナ禁止・ら抜き言葉・同一助詞の連続（`no-doubled-joshi`）などを textlint が機械的に検出する。
-- 全ルールを `error` で運用する（warning を出すルールは無い）。pre-commit（lefthook）と CI（`.github/workflows/lint.yml`）はともに終了コードで判定するため、検出が 1 件でも残ると commit と CI が止まる。`npx textlint` の終了コードが 0 であることを確認する。
+- 本リポジトリは warning を使わず、全ルールを `error` で運用する（textlint 自体は `severity: "warning"` も扱えるが、本リポジトリでは採用しない）。pre-commit（lefthook）と CI（`.github/workflows/lint.yml`）はともに終了コードで判定するため、検出が 1 件でも残ると commit と CI が止まる。`npx textlint` の終了コードが 0 であることを確認する。
 
 ## レビューと反映の反復（収束まで）
 
