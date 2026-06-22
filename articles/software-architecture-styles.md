@@ -1,9 +1,9 @@
 ---
 title: "ビジネスロジックを依存方向で守るアーキテクチャ様式を比較する"
-emoji: "🏛️"
+emoji: "🏛"
 type: "tech"
 topics: ["アーキテクチャ", "設計", "ドメイン駆動設計", "kotlin", "クリーンアーキテクチャ"]
-published: false
+published: true
 ---
 
 ## 導入: ビジネスロジックを依存方向でどう守るか

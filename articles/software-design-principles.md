@@ -3,7 +3,7 @@ title: "変更に強いコードの設計原則を比較する"
 emoji: "📐"
 type: "tech"
 topics: ["設計", "solid", "デザインパターン", "kotlin", "リファクタリング"]
-published: false
+published: true
 ---
 
 ## 導入: 変更に強いコードの普遍則をどう言語化するか

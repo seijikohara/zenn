@@ -3,7 +3,7 @@ title: "ドメインモデリングの設計思想を比較する"
 emoji: "🧩"
 type: "tech"
 topics: ["設計", "ドメイン駆動設計", "kotlin", "アーキテクチャ", "モデリング"]
-published: false
+published: true
 ---
 
 ## 導入: 複雑なドメインロジックをどう組織するか
