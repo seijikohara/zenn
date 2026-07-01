@@ -21,7 +21,7 @@ published: true
 - 型による制約の強度
 - コードとデータベースの主従関係
 
-本記事は 10 の設計思想を、設計の起点で 5 つの族に分けて比較する。特定の思想を中心に据えず、各思想を族の 1 メンバーとして対等に扱う。ドメイン駆動設計（Domain-Driven Design、以下 DDD）も数ある思想の 1 つとして同じ重みで扱い、中心に据えない。各思想を次の 3 段で展開し、末尾で全思想を横断するトレードオフ表にまとめる。
+本記事は 10 の設計思想を、設計の起点で 5 つの族に分けて比較する。各思想を族の 1 メンバーとして対等に扱い、特定の思想を中心に据えない。ドメイン駆動設計（Domain-Driven Design、以下 DDD）も、数ある思想の 1 つとして同じ扱いを受ける。各思想を次の 3 段で展開し、末尾で全思想を横断するトレードオフ表にまとめる。
 
 - 問題起点: 何の痛みを解こうとしたか
 - 論理: 設計の理屈
@@ -50,7 +50,7 @@ graph TB
 
 #### 問題起点
 
-業務手続きを愚直に手続きとして書きたい。1 つのリクエストに対し、入力の受け取り・検証・データベースの読み書き・結果の返却を順に行う。ドメインが単純なら、抽象化のための構造はかえって読解を妨げる。
+業務手続きをそのまま手続きとして書きたい。1 つのリクエストに対し、入力の受け取り・検証・データベースの読み書き・結果の返却を順に行う。ドメインが単純なら、抽象化のための構造はかえって読解を妨げる。
 
 #### 論理
 
@@ -86,7 +86,7 @@ class OrderService(private val db: Database) {
 
 採否の目安は次のとおり。
 
-- トランザクションスクリプトを避ける目安は、同じドメインルールが 3 か所以上に現れた時点である。
+- 同じドメインルールが 3 か所以上に現れた時点で、トランザクションスクリプトを避ける。
 - ルールの再利用が要求されるなら、ルールを置く場所をデータ側へ移す検討に入る。
 - ドメインが薄く CRUD（Create / Read / Update / Delete）に近いなら、手続きのままで十分に機能する。
 
@@ -134,7 +134,7 @@ class User(
 
 - ルールが増えると、永続化メソッドとビジネスメソッドが 1 つのクラスに堆積する。
 - テストにデータベースが必要になる。
-- スキーマがオブジェクト構造を規定する制約は、ドメインの都合よりテーブルの都合を優先させ、ドメインの表現力を削る。
+- スキーマがオブジェクト構造を規定する制約は、ドメインの都合よりテーブルの都合を優先させる。結果としてドメインの表現力を削る。
 
 適用範囲は次のとおり。
 
@@ -190,13 +190,13 @@ class OrderService(private val repository: OrderRepository) {
 - データ転送オブジェクト（Data Transfer Object、以下 DTO）やシリアライズと相性が良く、API 境界をまたぐデータ表現に転用しやすい。
 - 振る舞いの設計判断を省けるため、参入障壁が低い。
 
-批判と普及の併存は、設計の正しさと組織的な採用しやすさが別の評価軸である事実を示す。
+批判と普及の併存は、設計の正しさと組織的な採用しやすさが別の評価軸であることを示す。
 
 アネミックドメインモデルが妥当な場面もある。ドメインルールが薄く、オブジェクトが純粋なデータ表現として機能する境界（例: API のリクエスト/レスポンス、永続化の射影）では、振る舞いの欠如はむしろ単純さの利点になる。
 
 #### 担い手と論争
 
-- 批判・命名: Martin Fowler が 2003 年にアンチパターンとして命名し、最大の批判者でもある。"The fundamental horror of this anti-pattern is that it's so contrary to the basic idea of object-oriented design" と述べる[^anemic]。Fowler は記事内で Eric Evans に言及し、問題意識を共有する[^anemic]。
+- 批判・命名: Martin Fowler が 2003 年にアンチパターンとして命名し、批判の中心人物でもある。"The fundamental horror of this anti-pattern is that it's so contrary to the basic idea of object-oriented design" と述べる[^anemic]。Fowler は記事内で Eric Evans に言及し、問題意識を共有する[^anemic]。
 - 支持・擁護: Rüdiger zu Dohna は、オブジェクト指向の純粋さをドメインモデルの必須条件とする見方に反論する。"I disagree that OO purity is a hard requirement for qualifying as a Domain Model." と述べる[^anemic-dohna]。アンチパターンではなく SOLID な設計だとする反論もある[^anemic-solid]。CRUD 中心の領域では妥当とする中立論もある[^ms-ddd]。
 - 注意: Eric Evans が命名したとする説は一次情報で裏付けられない。命名は Fowler とする。
 
@@ -244,7 +244,7 @@ fun area(shape: Shape): Double = when (shape) {
 
 - DOP の提唱: Yehonathan Sharvit が書籍『Data-Oriented Programming』（2022）で原則を体系化した[^dop-sharvit][^dop-principles]。
 - DOD の提唱・普及: もう 1 つの系譜は、キャッシュ効率を狙うゲーム寄りのデータ指向設計（Data-Oriented Design、以下 DOD）である。Mike Acton が CppCon 2014 で普及させ[^dod-acton]、Richard Fabian が書籍にまとめた[^dod-fabian]。
-- 批判・慎重論: Dawid Ciężarkiewicz は、静的型システムを持つ言語では全データを汎用マップで表す方針は意味をなさないとし、Sharvit が不変性や永続データ構造の難点を過小評価していると批判する[^dop-dpc]。DOD への純然たる否定論は、逐語引用つきの実名批判者を一次情報で特定できない。批判の中心は DOD を ECS と同一視する誤解への反論である。
+- 批判・慎重論: Dawid Ciężarkiewicz は、静的型システムを持つ言語では全データを汎用マップで表す方針は意味をなさないとし、Sharvit が不変性や永続データ構造の難点を過小評価していると批判する[^dop-dpc]。DOD への全面的な否定論は、逐語引用つきの実名批判者を一次情報で特定できない。批判の中心は DOD を ECS と同一視する誤解への反論である。
 
 ### ECS（エンティティ・コンポーネント・システム）
 
@@ -313,7 +313,7 @@ ECS には次の弱点がある。
 
 - 起源: Scott Bilas が GDC 2002 でデータ駆動のゲームオブジェクト機構を示した。語は "Component System" である[^ecs-bilas]。
 - 体系化・普及: Adam Martin が t-machine.org（2007）で "Entity System(s)" として体系化した[^ecs-martin]。Unity DOTS[^ecs-unity] や Bevy が実装で普及させた。
-- 批判・慎重論: flecs 作者の Sander Mertens は、普及側の立場から素朴な ECS の限界を批判する。階層を性能よく実装するのは "impossible to implement a performant hierarchy in vanilla ECS" だと述べる[^ecs-mertens]。Dennis Gustafsson は、複数のコンポーネント型を読むと連続配置の利点が消えるとし、ECS の性能優位を誤解だと論じる[^ecs-gustafsson]。Casey Muratori は、Dungeon Siege を起源とする通説に異議を唱え、用語より先行する実装が Looking Glass Studios にあったと論じる[^ecs-muratori]。
+- 批判・慎重論: flecs 作者の Sander Mertens は、普及側の立場から素朴な ECS の限界を批判する。性能の良い階層を vanilla ECS で実装するのは "impossible to implement a performant hierarchy in vanilla ECS" だと述べる[^ecs-mertens]。Dennis Gustafsson は、複数のコンポーネント型を読むと連続配置の利点が消えるとし、ECS の性能優位を誤解だと論じる[^ecs-gustafsson]。Casey Muratori は、Dungeon Siege を起源とする通説に異議を唱え、用語より先行する実装が Looking Glass Studios にあったと論じる[^ecs-muratori]。
 
 ## 振る舞いを起点に組む
 
@@ -353,7 +353,7 @@ class Order private constructor(
 
 ルールは `Order` に属する。与信検査と合計計算はいずれも `Order` のメソッドに集約され、他のユースケースから同じメソッドを呼べる。集約は整合性の境界を定め、境界内の不変条件をまとめて守る。
 
-「どのオブジェクトがどの振る舞いを担うか」を決める発想は、責務駆動設計（Responsibility-Driven Design、以下 RDD）に由来する責務・役割のレンズである。RDD は Rebecca Wirfs-Brock が 1990 年に考案した、オブジェクトを責務の担い手として捉える設計手法である[^rdd-wirfs]。RDD は単独の方法論として前面に立つ場面が減った一方、責務でオブジェクトを切る考え方は DDD の戦術的設計や GRASP、「Tell, Don't Ask」に受け継がれて生きている。
+「どのオブジェクトがどの振る舞いを担うか」を決める発想は、責務駆動設計（Responsibility-Driven Design、以下 RDD）に由来する責務・役割のレンズである。RDD は Rebecca Wirfs-Brock が 1990 年に考案した、オブジェクトを責務の担い手として捉える設計手法である[^rdd-wirfs]。RDD は単独の方法論として前面に立つ場面が減った一方、責務でオブジェクトを切る考え方は DDD の戦術的設計や GRASP、「Tell, Don't Ask」に受け継がれている。
 
 #### 批判
 
@@ -377,7 +377,7 @@ class Order private constructor(
 
 - 提唱: Eric Evans が書籍『Domain-Driven Design』（2003）で体系化した。
 - 支持・普及: Martin Fowler が用語を広め[^ddd-fowler]、Vaughn Vernon が実装手法を整理した。2024 年の実証研究（IEEE TSE）は、マイクロサービスの境界設計の主要手法として位置づける[^ddd-tse]。
-- 批判・慎重論: Stefan Tilkov は戦術的パターンの教条的な適用を批判し、既存の DDD 用語に問題を無理やり押し込むだけの設計を戒める[^ddd-tilkov]。Greg Young は、単純な例への依存と immutable value object などへの盲従を教条主義として批判する[^ddd-young]。Khalil Stemmler は、習熟した後は DDD の儀式を捨てるべきだと述べる。"you can only say DDD is overrated once you've achieved mastery over it. At this point, you toss it aside." と記す[^ddd-stemmler]。Fowler も複雑なドメイン向きと限定する。
+- 批判・慎重論: Stefan Tilkov は戦術的パターンの教条的な適用を批判し、既存の DDD 用語に問題を強引に当てはめるだけの設計を戒める[^ddd-tilkov]。Greg Young は、単純な例への依存と immutable value object などへの盲従を教条主義として批判する[^ddd-young]。Khalil Stemmler は、習熟した後は DDD の儀式を捨てるべきだと述べる。"you can only say DDD is overrated once you've achieved mastery over it. At this point, you toss it aside." と記す[^ddd-stemmler]。Fowler も複雑なドメイン向きと限定する。
 
 ## 型と関数を起点に組む
 
@@ -429,13 +429,13 @@ FP の適用には次の限界がある。
 - 提唱・体系化: Scott Wlaschin が書籍『Domain Modeling Made Functional』（2018）でまとめた[^fdm-wlaschin]。Debasish Ghosh も並行して Scala で『Functional and Reactive Domain Modeling』（2016）を著した[^fdm-ghosh]。
 - 源流: Yaron Minsky が "make illegal states unrepresentable" の指針を示した（Jane Street、2011）[^fdm-minsky]。
 - 支持・普及: Mark Seemann が実務へ広め、Scala 公式（Scala 3 Book）が手法を解説する[^fdm-scala]。
-- 批判・慎重論: Sean Goedecke は "make invalid states unrepresentable" を有害だと論じる。業務ルールが流動的なとき "you will be forced to do something that violates your tidy constraints" と述べる[^fdm-goedecke]。Iain Schmitt は、大規模アプリで全依存を関数引数として渡す手法のスケール性に懐疑を示す[^fdm-schmitt]。可変状態が本質の領域では複雑化し、OOP に最適化したチームでは移行コストが生じる。
+- 批判・慎重論: Sean Goedecke は "make invalid states unrepresentable" を有害だと論じる。業務ルールが流動的なとき "you will be forced to do something that violates your tidy constraints" と述べる[^fdm-goedecke]。Iain Schmitt は、大規模アプリで全依存を関数引数として渡す手法のスケール性に懐疑を示す[^fdm-schmitt]。
 
 ### 型駆動設計
 
 #### 問題起点
 
-不正な状態をそもそも表現できないようにしたい。実行時の検証で弾くのではなく、不正な値を型として構築できなくする。「正しさをコンパイル時に保証する」。
+不正な状態をそもそも表現できないようにしたい。実行時の検証で弾くのではなく、不正な値を型として構築できなくし、正しさをコンパイル時に保証する。
 
 #### 論理
 
@@ -530,7 +530,7 @@ fun unlock(door: Door, key: String): Door = when (door) {
 
 - 提唱: David Harel が Statecharts を 1987 年の論文で示した。論文名は "Statecharts: A Visual Formalism for Complex Systems" で、Science of Computer Programming 誌に掲載された[^sm-harel]。
 - 支持・普及: 組み込みや制御系が UML 状態機械や Stateflow で定番として用いる。W3C は SCXML として標準化した[^sm-scxml]。近年はフロントエンドで David Khourshid の XState が復権させた[^sm-xstate]。
-- 批判・慎重論: Khourshid 自身が、単純な状態機械にライブラリは不要だとし、"you don't need a library for state machines" と述べる（フル statechart には必要だと留保する）[^sm-khourshid]。Alan Skorkin は、状態機械の導入は時期尚早になりがちで "It's overkill and by the time it's not, it's too late." と論じる[^sm-skorkin]。Michael von der Beeck は、Harel 原論文が形式意味論を固定せず、非互換な statechart 変種が多数生まれた点を学術的に批判する[^sm-beeck]。素朴な状態機械は状態爆発の問題も抱える。
+- 批判・慎重論: Khourshid 自身が、単純な状態機械にライブラリは不要だとし、"you don't need a library for state machines" と述べる（フル statechart には必要だと留保する）[^sm-khourshid]。Alan Skorkin は、状態機械の導入は時期尚早になりがちで "It's overkill and by the time it's not, it's too late." と論じる[^sm-skorkin]。Michael von der Beeck は、Harel 原論文が形式意味論を固定せず、非互換な statechart 変種が多数生まれた点を学術的に批判する[^sm-beeck]。
 
 ### イベントソーシング / CQRS
 
@@ -600,7 +600,7 @@ CQRS の読み書き分離は、単純な CRUD には過剰な複雑さを持ち
 
 ## 設計思想の相関
 
-5 族に分けても、思想どうしは族をまたいで関係する。思想どうしには系譜・対立・合成の関係が重なる。族で束ねた地図の上に、派生の流れ・同じ軸での対立・組み合わせの線を引くと、各思想の位置が立体的に見える。関係を 3 種に分けて図示し、要点を整理する。
+5 族に分けても、思想どうしは族をまたいで関係する。関係には系譜・対立・合成が重なる。族で束ねた地図の上に、派生の流れ・同じ軸での対立・組み合わせの線を引くと、各思想の位置が立体的に見える。関係を 3 種に分けて図示し、要点を整理する。
 
 系譜の関係を示す。実線矢印は派生・源流の向き（源流から派生へ）を表す。
 
@@ -642,11 +642,11 @@ graph LR
 
 対立の要点は次のとおり。
 
-- トランザクションスクリプトとリッチドメインモデルは、手続きへの集約とデータへの統合で対立する。
+- トランザクションスクリプトとリッチドメインモデルは、ロジックを手続きへ集約するか、データと振る舞いを統合するかで対立する。
 - リッチドメインモデルとアネミックドメインモデルは、振る舞いの統合と喪失で対立する。アネミックドメインモデルは振る舞いを失った退化形として批判される。
 - OOP 系（リッチドメインモデル）と FP 系（関数型ドメインモデリング・データ指向プログラミング）は、振る舞いの隠蔽と関数の分離で対立する。
 - 状態を主役に置く思想（状態機械・リッチドメインモデル・アクティブレコード）とイベントを主役に置くイベントソーシングは、保存対象の選択で対立する。
-- リッチドメインモデルや DDD は「コード → DB」の向きを取り、アクティブレコードやデータ中心設計は「DB → コード」の向きを取る。設計の起点で対立する。
+- リッチドメインモデルは「コード → DB」の向きを取り、アクティブレコードやデータ中心設計は「DB → コード」の向きを取る。設計の起点で対立する。
 
 合成・包含の要点は次のとおり。
 
